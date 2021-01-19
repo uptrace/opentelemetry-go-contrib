@@ -49,7 +49,7 @@ func (m messageType) Event(ctx context.Context, id int, message interface{}) {
 		span.AddEvent("message", trace.WithAttributes(
 			label.KeyValue(m),
 			semconv.RPCMessageIDKey.Int(id),
-			semconv.RPCMessageUncompressedSizeKey.Int(proto.Size(p)),
+			semconv.RPCMessageUncompressedSizeKey.Int(protoSize(p)),
 		))
 	} else {
 		span.AddEvent("message", trace.WithAttributes(
@@ -57,6 +57,13 @@ func (m messageType) Event(ctx context.Context, id int, message interface{}) {
 			semconv.RPCMessageIDKey.Int(id),
 		))
 	}
+}
+
+func protoSize(p proto.Mesage) int {
+	defer func() {
+		_ = recover()
+	}()
+	return proto.Size(p)
 }
 
 var (
@@ -175,7 +182,6 @@ func (w *clientStream) SendMsg(m interface{}) error {
 
 func (w *clientStream) Header() (metadata.MD, error) {
 	md, err := w.ClientStream.Header()
-
 	if err != nil {
 		w.sendStreamEvent(errorEvent, err)
 	}
